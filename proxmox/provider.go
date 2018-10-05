@@ -1,6 +1,7 @@
 package proxmox
 
 import (
+	"crypto/tls"
 	"fmt"
 	pxapi "github.com/Telmate/proxmox-api-go/proxmox"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -49,7 +50,8 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"proxmox_vm_qemu": resourceVmQemu(),
+			"proxmox_vm_qemu":                   resourceVmQemu(),
+			"proxmox_vm_qemu_snapshot_rollback": resourceVmQemuSnapshotRollback(),
 			// TODO - storage_iso
 			// TODO - bridge
 			// TODO - vm_qemu_template
@@ -76,7 +78,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 func getClient(pm_api_url string, pm_user string, pm_password string) (*pxapi.Client, error) {
-	client, _ := pxapi.NewClient(pm_api_url, nil, nil)
+	config := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	client, _ := pxapi.NewClient(pm_api_url, nil, config)
 	err := client.Login(pm_user, pm_password)
 	if err != nil {
 		return nil, err
